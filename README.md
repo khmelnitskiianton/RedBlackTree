@@ -29,7 +29,7 @@ Using CMake, you can specify 2 options:
 
 *Debug:*
 ```shell
-cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DBUILD_TESTS=ON -DSANITIZE= ON -DCMAKE_CXX_COMPILER=clang++ -S . -B build
+cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DBUILD_TESTS=ON -DSANITIZE=ON -DCMAKE_CXX_COMPILER=clang++ -S . -B build
 ```
 
 *Release:*

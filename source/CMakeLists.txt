@@ -29,7 +29,7 @@ else()
     target_compile_options(${TARGET} PRIVATE
         # Warnings
         -Wall 
-        -Wextra 
+        -Wextra  
         -Werror
         # Sanitizers 
         $<$<BOOL:${SANITIZE}>: -fsanitize=address,undefined,leak,alignment,bool,bounds,enum,float-cast-overflow,float-divide-by-zero,integer-divide-by-zero,nonnull-attribute,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,unreachable,vla-bound,vptr>
