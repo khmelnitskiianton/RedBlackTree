@@ -1,10 +1,15 @@
-cmake_minimum_required(VERSION 3.15)
-project(triangles 
+cmake_minimum_required(VERSION 3.20)
+project(rbtree 
         VERSION 1.0
         LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_subdirectory(tests/unittests)
+option(SANITIZE "Enable compiler sanitizers" OFF)
+option(BUILD_TESTS "Build unit tests" OFF)
+
 add_subdirectory(source)
+if (BUILD_TESTS)
+        add_subdirectory(tests/unittests)
+endif()

@@ -20,4 +20,5 @@ runs:
           libstdc++-${GCC_VERSION}-dev \
           clang lld clang-format \
           python3 \
-          libgtest-dev libgmock-dev libtbb-dev
+          libgtest-dev libgmock-dev libtbb-dev \
+          libboost graphviz
