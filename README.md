@@ -54,7 +54,20 @@ cmake --install build --prefix ~/my_software
 
 ## Visualisation
 
+Using GraphViz tool, you can print red-black tree to HTML
 
+Enable logging tree in constructor with second argument as true(default false)
+
+```cpp
+Tree::RBTree<int, bool (*)(int, int)> rbtree(comparator, true);
+```
+
+To print current state of tree use `printTree()` method.
+
+Storage of logs: `/tmp/rbtree_log/log.html`, all objects has format SVG.
+
+Example:
+![logs](.github/images/image.png)
 
 ## Tests
 

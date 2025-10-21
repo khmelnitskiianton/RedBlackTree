@@ -9,7 +9,7 @@ bool comparator(int a, int b) {
 }
 
 int main() {
-  Tree::RBTree<int, bool (*)(int, int)> rbtree = Tree::RBTree<int, bool (*)(int, int)>(comparator, true);
+  Tree::RBTree<int, bool (*)(int, int)> rbtree(comparator, true);
   rbtree.printTree();
   rbtree.insert(1);
   rbtree.insert(4);

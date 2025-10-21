@@ -2,7 +2,7 @@
 #define INCLUDE_RBTREE_HPP
 
 #include <boost/process.hpp>
-#include <filesystem>
+#include <boost/filesystem.hpp>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -272,19 +272,35 @@ template <typename KeyT, typename Comp> class RBTree {
 
       GenerateGraph();
 
+      // Run: dot <path to dot graph> -Tsvg
+
+      // Args for dot
       std::vector<std::string> args{};
       args.emplace_back(FileGraphPath);
       args.emplace_back("-T" + std::string(TypeOfImage));
+
+      // Run command using boost::process
       boost::process::ipstream dot_out;
+      // Need absolute path for 'dot'
       boost::filesystem::path graphviz_bin = boost::process::search_path("dot");
-      boost::process::child dot_proc(graphviz_bin, boost::process::args(args), boost::process::std_out > dot_out);
+      if (graphviz_bin.empty()) {
+        throw std::runtime_error("Graphviz 'dot' not found in PATH");
+      }
+
+      int exit_code = 0;
+      try {
+        exit_code = boost::process::system(
+        graphviz_bin, boost::process::args(args), boost::process::std_out > dot_out);
+      } catch (const boost::process::process_error& e) {
+         // failed exec, ENOENT, EACCES, etc.
+        throw std::runtime_error(std::string("Failed to start 'dot': ") + e.what());
+      }
 
       file_log_ << "\n<p>\n<b><big> ### In file: " << file << ",\tIn function: " << function << ",\tIn line: " << line
                 << " ### </big></b>\n";
 
       // If we’re embedding SVG inline, skip the first 6 header lines
       std::string linebuf;
-
       for (int i = 0; i < 6 && std::getline(dot_out, linebuf); ++i) {
         // discard header lines
       }
@@ -293,10 +309,11 @@ template <typename KeyT, typename Comp> class RBTree {
         file_log_ << linebuf << '\n';
       }
 
-      dot_proc.wait();
-      if (dot_proc.exit_code() != 0) {
-        throw std::runtime_error("dot failed with exit code " + std::to_string(dot_proc.exit_code()));
+      if (exit_code != 0) {
+        // dot failed
+        throw std::runtime_error("dot failed with exit code " + std::to_string(exit_code));
       }
+
       file_log_ << "</p>\n<hr size=\"4\" color=\"#000000\">\n\n";
     }
 
@@ -306,13 +323,13 @@ template <typename KeyT, typename Comp> class RBTree {
       if (!enable_log_)
         return;
 
-      const std::filesystem::path log_dir = std::filesystem::path(FolderLogPath);
-      const bool need_init = !std::filesystem::exists(log_dir) || !std::filesystem::is_directory(log_dir);
+      const boost::filesystem::path log_dir = boost::filesystem::path(FolderLogPath);
+      const bool need_init = !boost::filesystem::exists(log_dir) || !boost::filesystem::is_directory(log_dir);
       if (need_init) {
-        std::error_code ec;
-        std::filesystem::create_directories(log_dir, ec);
+        boost::system::error_code ec;
+        boost::filesystem::create_directories(log_dir, ec);
         if (ec)
-          throw std::runtime_error("create_directories failed: " + ec.message());
+          throw std::runtime_error("creating path for logs failed: " + ec.message());
       }
       file_log_.open(FileLogPath, std::ios::out | std::ios::trunc);
 
@@ -378,7 +395,7 @@ template <typename KeyT, typename Comp> class RBTree {
 
       file_graph_ << "}\n"; // close subgraph
 
-      WriteHead();
+      WriteRoot();
 
       WriteNil();
 
@@ -420,8 +437,8 @@ template <typename KeyT, typename Comp> class RBTree {
                     << "\"]\n";
       }
     }
-    void WriteHead() {
-      file_graph_ << "All[shape = Mrecord, label = \" HEADER | <f0> Root: " << root_ << " \", style = \"filled\", fillcolor = \""
+    void WriteRoot() {
+      file_graph_ << "All[shape = Mrecord, label = \" ROOT | <f0> " << root_ << " \", style = \"filled\", fillcolor = \""
                   << FillBackGraph << "\"];\n";
       if (root_ != nil_) {
         file_graph_ << "All:<f0> -> node" << root_ << "[color = \"" << ColorEdgeHead << "\"];\n";
@@ -430,7 +447,7 @@ template <typename KeyT, typename Comp> class RBTree {
     void WriteNil() {
       file_graph_ << "\tnode" << nil_ << "[shape = Mrecord, style = filled, fillcolor = \"" << ColorBlack << "\", color = \""
                   << ColorEdgeGraph << "\", label = \"{ PARENT: " << nil_->getParent() << " | PTR: " << nil_
-                  << " | DATA: " << nil_->getKey() << " | { <f0> LEFT: " << nil_->getLeft()
+                  << " | NIL " << " | { <f0> LEFT: " << nil_->getLeft()
                   << " | <f1> RIGHT: " << nil_->getRight() << " }}\"];\n";
     }
 };
