@@ -1,11 +1,11 @@
-#include <iostream>
 #include "io_wrap.hpp"
 #include "rbtree.hpp"
+#include <iostream>
 
 bool comparator(int a, int b) {
   if (a < b)
     return true;
-  return false; 
+  return false;
 }
 
 int main() {

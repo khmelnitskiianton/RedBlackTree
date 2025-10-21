@@ -1,8 +1,8 @@
 #ifndef INCLUDE_RBTREE_HPP
 #define INCLUDE_RBTREE_HPP
 
-#include <boost/process.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/process.hpp>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -212,9 +212,7 @@ template <typename KeyT, typename Comp> class RBTree {
 
       printLogStart();
     }
-    ~RBTree() {
-      printLogFinish();
-    }
+    ~RBTree() { printLogFinish(); }
 
     void insert(const KeyT &key) {
       Node *z = new Node(key);
@@ -289,10 +287,9 @@ template <typename KeyT, typename Comp> class RBTree {
 
       int exit_code = 0;
       try {
-        exit_code = boost::process::system(
-        graphviz_bin, boost::process::args(args), boost::process::std_out > dot_out);
-      } catch (const boost::process::process_error& e) {
-         // failed exec, ENOENT, EACCES, etc.
+        exit_code = boost::process::system(graphviz_bin, boost::process::args(args), boost::process::std_out > dot_out);
+      } catch (const boost::process::process_error &e) {
+        // failed exec, ENOENT, EACCES, etc.
         throw std::runtime_error(std::string("Failed to start 'dot': ") + e.what());
       }
 
@@ -446,9 +443,8 @@ template <typename KeyT, typename Comp> class RBTree {
     }
     void WriteNil() {
       file_graph_ << "\tnode" << nil_ << "[shape = Mrecord, style = filled, fillcolor = \"" << ColorBlack << "\", color = \""
-                  << ColorEdgeGraph << "\", label = \"{ PARENT: " << nil_->getParent() << " | PTR: " << nil_
-                  << " | NIL " << " | { <f0> LEFT: " << nil_->getLeft()
-                  << " | <f1> RIGHT: " << nil_->getRight() << " }}\"];\n";
+                  << ColorEdgeGraph << "\", label = \"{ PARENT: " << nil_->getParent() << " | PTR: " << nil_ << " | NIL "
+                  << " | { <f0> LEFT: " << nil_->getLeft() << " | <f1> RIGHT: " << nil_->getRight() << " }}\"];\n";
     }
 };
 }; // namespace Tree
