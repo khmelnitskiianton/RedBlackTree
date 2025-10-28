@@ -3,15 +3,18 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/process.hpp>
+#include <format>
 #include <fstream>
 #include <iostream>
+#include <stack>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace Tree {
 /// Requires bool comparator_(KeyT a, KeyT b)
 /// If a < b gives true
-/// else false
+/// else == (a <= b) gives false
 template <typename KeyT, typename Comp> class RBTree {
     enum class Color { Red = 0, Black = 1 };
     class Node {
@@ -20,6 +23,7 @@ template <typename KeyT, typename Comp> class RBTree {
         Node *left_ = nullptr;
         Node *right_ = nullptr;
         Color color_ = Color::Black;
+        size_t size_ = 1;
 
       public:
         Node() = default;
@@ -34,15 +38,18 @@ template <typename KeyT, typename Comp> class RBTree {
         void setLeft(Node *left) { left_ = left; }
         void setRight(Node *right) { right_ = right; }
         void setColor(Color color) { color_ = color; }
+        void setSize(size_t size) { size_ = size; }
 
         Node *getParent() const { return parent_; }
         Node *getLeft() const { return left_; }
         Node *getRight() const { return right_; }
         Color getColor() const { return color_; }
+        size_t getSize() const { return size_; }
 
-        bool isRed() { return color_ == Color::Red; }
-        bool isBlack() { return color_ == Color::Black; }
+        bool isRed() const { return color_ == Color::Red; }
+        bool isBlack() const { return color_ == Color::Black; }
     };
+    using SrcDstPair = std::pair<const Node *, Node *>;
 
     Node nil_node_;           // Nill object that points to itself
     Node *nil_ = &nil_node_;  // pointer of nill
@@ -50,11 +57,181 @@ template <typename KeyT, typename Comp> class RBTree {
     Comp comparator_;         // comparator
 
   private:
+    void copyTree(const RBTree &rhs) {
+      if (this == &rhs)
+        return;
+
+      // Free previous tree if it was not empty
+      freeTree();
+      // Close previous logs
+      closeLogger();
+
+      // Copy logger
+      copyLogger(rhs);
+
+      // Src to dst values coping
+      nil_node_.setColor(Color::Black);
+      nil_node_.setLeft(&nil_node_);
+      nil_node_.setRight(&nil_node_);
+      nil_node_.setParent(&nil_node_);
+      nil_node_.setSize(0);
+      nil_ = &nil_node_;
+      root_ = &nil_node_;
+      comparator_ = rhs.comparator_;
+
+      if (rhs.root_ == rhs.nil_)
+        return;
+
+      Node *new_root = new Node(rhs.root_->getKey());
+      new_root->setColor(Color::Black);
+      new_root->setLeft(nil_);
+      new_root->setRight(nil_);
+      new_root->setParent(nil_);
+      new_root->setSize(rhs.root_->getSize());
+      root_ = new_root;
+
+      std::stack<SrcDstPair> nodes_stack;
+      nodes_stack.push({rhs.root_, new_root});
+      while (!nodes_stack.empty()) {
+        // Take pair of src-dst nodes
+        SrcDstPair sdpair = nodes_stack.top();
+        nodes_stack.pop();
+        const Node *src = sdpair.first;
+        Node *dst = sdpair.second;
+        // Left child
+        if (src->getLeft() != rhs.nil_) {
+          Node *child = new Node(src->getLeft()->getKey());
+          dst->setLeft(child);
+          child->setColor(src->getLeft()->getColor());
+          child->setLeft(nil_);
+          child->setRight(nil_);
+          child->setSize(src->getLeft()->getSize());
+          child->setParent(dst);
+          nodes_stack.push({src->getLeft(), child});
+        } else {
+          dst->setLeft(nil_);
+        }
+        // Right child
+        if (src->getRight() != rhs.nil_) {
+          Node *child = new Node(src->getRight()->getKey());
+          dst->setRight(child);
+          child->setColor(src->getRight()->getColor());
+          child->setLeft(nil_);
+          child->setRight(nil_);
+          child->setSize(src->getRight()->getSize());
+          child->setParent(dst);
+          nodes_stack.push({src->getRight(), child});
+        } else {
+          dst->setRight(nil_);
+        }
+      }
+    }
+
+    /// Get size of node
+    int nodeSize(const Node *node) const { return (node == nil_) ? 0 : node->getSize(); }
+
+    /// Update one size with its l/r nodes sizes
+    void updateSize(Node *node) {
+      if (node == nil_)
+        return;
+      node->setSize(1 + nodeSize(node->getLeft()) + nodeSize(node->getRight()));
+    }
+
+    /// Update sizes for all branch
+    void updateSizeUp(Node *node) {
+      while (node != nil_) {
+        updateSize(node);
+        node = node->getParent();
+      }
+    }
+
+    /// Method returns an ptr to the first element that compares not less than x.
+    Node *lowerBound(const KeyT &key) const { return lowerBound(root_, key); }
+    Node *lowerBound(Node *node, const KeyT &key) const {
+      Node *save_node = nil_;
+      while (node != nil_) {
+        if (!comparator_(node->getKey(), key)) {
+          save_node = node;
+          node = node->getLeft();
+        } else {
+          node = node->getRight();
+        }
+      }
+      return save_node;
+    }
+
+    /// Method returns an ptr to the first element that compares greater than x.
+    Node *upperBound(const KeyT &key) const { return upperBound(root_, key); }
+    Node *upperBound(Node *node, const KeyT &key) const {
+      Node *save_node = nil_;
+      while (node != nil_) {
+        if (comparator_(key, node->getKey())) {
+          save_node = node;
+          node = node->getLeft();
+        } else {
+          node = node->getRight();
+        }
+      }
+      return save_node;
+    }
+
+    /// Method counts amount of nodes that less than node
+    int rankOfNode(const Node *p) const {
+      if (p == nil_)
+        return nodeSize(root_);
+      int r = nodeSize(p->getLeft());
+      const Node *cur = p;
+      while (cur->getParent() != nil_) {
+        const Node *par = cur->getParent();
+        if (cur == par->getRight()) {
+          r += 1 + nodeSize(par->getLeft());
+        }
+        cur = par;
+      }
+      return r;
+    }
+
+    /// Method counts amount of nodes that less than key
+    int rankLowerBound(const KeyT &key) const {
+      const Node *p = lowerBound(key);
+      return rankOfNode(p);
+    }
+
+    /// Method counts amount of nodes that less or equal than key
+    int rankUpperBound(const KeyT &key) const {
+      const Node *p = upperBound(key);
+      return rankOfNode(p);
+    }
+
+    /// Wrap for comparator to check equality
+    bool compareEqual(const KeyT &a, const KeyT &b) const { return !comparator_(a, b) && !comparator_(b, a); }
+
+    /// Method of free tree's nodes
+    void freeTree() {
+      if (root_ == nil_)
+        return;
+
+      std::stack<Node *> node_stack;
+      node_stack.push(root_);
+      while (!node_stack.empty()) {
+        Node *delete_node = node_stack.top();
+        node_stack.pop();
+
+        if (delete_node->getLeft() != nil_)
+          node_stack.push(delete_node->getLeft());
+        if (delete_node->getRight() != nil_)
+          node_stack.push(delete_node->getRight());
+
+        delete delete_node;
+      }
+    }
+
     /// Method to search key in tree
-    const Node *search(const KeyT &key) const { return search(root_, key); }
+    /// Return non-const node ptr
+    Node *search(const KeyT &key) const { return search(root_, key); }
     /// Method to search key in tree's node using loop(not recursion)
-    const Node *search(const Node *node, const KeyT &key) const {
-      while ((node != nil_) && (key != node->getKey())) {
+    Node *search(Node *node, const KeyT &key) const {
+      while ((node != nil_) && (!compareEqual(key, node->getKey()))) {
         if (comparator_(key, node->getKey()))
           node = node->getLeft();
         else
@@ -68,14 +245,14 @@ template <typename KeyT, typename Comp> class RBTree {
       if (node == nil_)
         return;
       inorderTreeWalk(node->getLeft());
-      std::cout << node->getKey() << std::endl;
+      std::cout << node->getKey() << '\n';
       inorderTreeWalk(node->getRight());
     }
 
     /// Method finds minimum node in tree
-    const Node *minimum() const { return minimum(root_); }
+    Node *minimum() const { return minimum(root_); }
     /// Method finds minimum node from tree's node
-    const Node *minimum(const Node *node) const {
+    Node *minimum(Node *node) const {
       while (node->getLeft() != nil_)
         node = node->getLeft();
       return node;
@@ -138,6 +315,10 @@ template <typename KeyT, typename Comp> class RBTree {
 
       y->setLeft(x); // Make x - left for y
       x->setParent(y);
+
+      // Update sizes
+      updateSize(x);
+      updateSize(y);
     }
 
     /// Method rotates node for right
@@ -162,12 +343,17 @@ template <typename KeyT, typename Comp> class RBTree {
 
       y->setRight(x); // Make x - right for y
       x->setParent(y);
+
+      // Update sizes
+      updateSize(x);
+      updateSize(y);
     }
 
     void insertFixup(Node *z) {
+      Node *y = nil_;
       while (z->getParent()->isRed()) {
         if (z->getParent() == z->getParent()->getParent()->getLeft()) {
-          Node *y = z->getParent()->getParent()->getRight();
+          y = z->getParent()->getParent()->getRight();
           if (y->isRed()) {
             z->getParent()->setColor(Color::Black);
             y->setColor(Color::Black);
@@ -183,7 +369,7 @@ template <typename KeyT, typename Comp> class RBTree {
             rotateRight(z->getParent()->getParent());
           }
         } else {
-          Node *y = z->getParent()->getParent()->getLeft();
+          y = z->getParent()->getParent()->getLeft();
           if (y->isRed()) {
             z->getParent()->setColor(Color::Black);
             y->setColor(Color::Black);
@@ -202,6 +388,152 @@ template <typename KeyT, typename Comp> class RBTree {
       }
       root_->setColor(Color::Black);
     }
+
+    void transplant(Node *u, Node *v) {
+      if (u->getParent() == nil_) {
+        root_ = v;
+      } else if (u == u->getParent()->getLeft()) {
+        u->getParent()->setLeft(v);
+      } else {
+        u->getParent()->setRight(v);
+      }
+      v->setParent(u->getParent());
+    }
+
+    void eraseFixup(Node *x) {
+      Node *w = nil_;
+      while ((x != root_) && (x->getColor() == Color::Black)) {
+        if (x == x->getParent()->getLeft()) {
+          // w is x's sibling
+          w = x->getParent()->getRight();
+
+          if (w->getColor() == Color::Red) {
+            w->setColor(Color::Black);
+            x->getParent()->setColor(Color::Red);
+            rotateLeft(x->getParent());
+            w = x->getParent()->getRight();
+          }
+          if ((w->getLeft()->getColor() == Color::Black) && (w->getRight()->getColor() == Color::Black)) {
+            w->setColor(Color::Red);
+            x = x->getParent();
+          } else {
+            if (w->getRight()->getColor() == Color::Black) {
+              w->getLeft()->setColor(Color::Black);
+              w->setColor(Color::Red);
+              rotateRight(w);
+              w = x->getParent()->getRight();
+            }
+            w->setColor(x->getParent()->getColor());
+            x->getParent()->setColor(Color::Black);
+            w->getRight()->setColor(Color::Black);
+            rotateLeft(x->getParent());
+            x = root_;
+          }
+        } else {
+          // w is x's sibling
+          w = x->getParent()->getLeft();
+
+          if (w->getColor() == Color::Red) {
+            w->setColor(Color::Black);
+            x->getParent()->setColor(Color::Red);
+            rotateRight(x->getParent());
+            w = x->getParent()->getLeft();
+          }
+          if ((w->getRight()->getColor() == Color::Black) && (w->getLeft()->getColor() == Color::Black)) {
+            w->setColor(Color::Red);
+            x = x->getParent();
+          } else {
+            if (w->getLeft()->getColor() == Color::Black) {
+              w->getRight()->setColor(Color::Black);
+              w->setColor(Color::Red);
+              rotateLeft(w);
+              w = x->getParent()->getLeft();
+            }
+            w->setColor(x->getParent()->getColor());
+            x->getParent()->setColor(Color::Black);
+            w->getLeft()->setColor(Color::Black);
+            rotateRight(x->getParent());
+            x = root_;
+          }
+        }
+      }
+      x->setColor(Color::Black);
+    }
+    /// Method for deleting
+    void erase(Node *z) {
+      Node *y = z;
+      Node *x = nil_;
+      Color y_orig_color = y->getColor();
+      if (z->getLeft() == nil_) {
+        x = z->getRight();
+        transplant(z, z->getRight()); // replace z by its right child
+      } else if (z->getRight() == nil_) {
+        x = z->getLeft();
+        transplant(z, z->getLeft()); // replace z by its left child
+      } else {
+        y = minimum(z->getRight()); // y is z’s successor
+        y_orig_color = y->getColor();
+        x = y->getRight();
+        if (y != z->getRight()) {
+          transplant(y, y->getRight());
+          y->setRight(z->getRight());  // z’s right child becomes
+          y->getRight()->setParent(y); // y’s right child
+        } else {
+          x->setParent(y); // in case x is NIL
+        }
+        transplant(z, y);           // replace z by its successor y
+        y->setLeft(z->getLeft());   // and give z’s left child to y,
+        y->getLeft()->setParent(y); // which had no left child
+        y->setColor(z->getColor());
+      }
+      // if any red-black violations occured, correct them
+      if (y_orig_color == Color::Black) {
+        eraseFixup(x);
+      }
+
+      // Update sizes
+      Node *n = x;
+      if (n == nil_)
+        n = x->getParent(); // if nil - get to its parent
+      updateSizeUp(n);
+
+      // Revive nil_'s parent to nil_(changes was required by algorithm)
+      // And keep root black
+      nil_->setParent(nil_);
+      root_->setColor(Color::Black);
+      delete z;
+    }
+
+    std::pair<bool, int> checkNode(const Node *n) const {
+      if (n == nil_)
+        return {true, 1}; // NIL is black, contributes 1
+
+      auto [l_ok, l_bh] = checkNode(n->getLeft());
+      auto [r_ok, r_bh] = checkNode(n->getRight());
+
+      // Strict BST property with comparator: left < n < right
+      bool bst_ok = (n->getLeft() == nil_ || comparator_(n->getLeft()->getKey(), n->getKey())) &&
+                    (n->getRight() == nil_ || comparator_(n->getKey(), n->getRight()->getKey()));
+
+      // Red node must have black children
+      bool red_ok = !(n->isRed() && (n->getLeft()->isRed() || n->getRight()->isRed()));
+
+      // Same black height on both sides
+      bool bh_ok = (l_bh == r_bh);
+
+      int bh = l_bh + (n->isBlack() ? 1 : 0);
+      return {l_ok && r_ok && bst_ok && red_ok && bh_ok, bh};
+    }
+
+    /// Method for verifing RB invariants
+    bool checkInvariants() const {
+      if (root_ == nil_)
+        return true; // empty tree is valid
+      if (root_->getColor() != Color::Black)
+        return false; // root must be black
+      return checkNode(root_).first;
+    }
+
     /// Methods for use tree
   public:
     RBTree(Comp comparator, bool enable_log = false) : comparator_(comparator), enable_log_(enable_log) {
@@ -209,12 +541,31 @@ template <typename KeyT, typename Comp> class RBTree {
       nil_node_.setLeft(&nil_node_);
       nil_node_.setRight(&nil_node_);
       nil_node_.setParent(&nil_node_);
+      nil_node_.setSize(0);
 
       printLogStart();
     }
-    ~RBTree() { printLogFinish(); }
 
+    RBTree(const RBTree &rhs) { copyTree(rhs); }
+
+    RBTree &operator=(const RBTree &rhs) {
+      copyTree(rhs);
+      return *this;
+    }
+
+    ~RBTree() {
+      freeTree();
+      printLogFinish();
+    }
+
+    bool contains(const KeyT &key) const { return search(root_, key) != nil_; }
+
+    /// Method for insert key in rbtree
     void insert(const KeyT &key) {
+      // If in tree dont add new, all uniq
+      if (contains(key))
+        return;
+
       Node *z = new Node(key);
       Node *y = nil_;
       Node *x = root_;
@@ -237,15 +588,43 @@ template <typename KeyT, typename Comp> class RBTree {
       z->setRight(nil_);
       z->setColor(Color::Red);
       insertFixup(z);
+
+      // Update sizes
+      updateSizeUp(z);
+
+      // if (!checkInvariants())
+      //   throw std::runtime_error("Bad Red Black tree, no invariants");
     }
+
+    size_t erase(const KeyT &key) {
+      Node *find_node = search(key);
+      if (find_node == nil_)
+        return 0;
+      erase(find_node);
+
+      // if (!checkInvariants())
+      //   throw std::runtime_error("Bad Red Black tree, no invariants");
+
+      return 1;
+    }
+
+    size_t rangeQuery(const KeyT &begin, const KeyT &end) {
+      if (!comparator_(begin, end) && !compareEqual(begin, end))
+        return 0;
+      int r1 = rankLowerBound(begin);
+      int r2 = rankLowerBound(end);
+      // [first, second)
+      return (r2 > r1) ? (r2 - r1) : 0;
+    }
+
     /// Method to walk tree recursively
     void inorderTreeWalk() { inorderTreeWalk(root_); }
 
     /// Grpahviz log section
   private:
     static constexpr const char *FolderLogPath = "/tmp/rbtree_log/";
-    static constexpr const char *FileLogPath = "/tmp/rbtree_log/log.html";
-    static constexpr const char *FileGraphPath = "/tmp/rbtree_log/graph.dot";
+    static constexpr const char *FileLogName = "log.html";
+    static constexpr const char *FileGraphName = "graph.dot";
     static constexpr const char *TypeOfImage = "svg";
 
     static constexpr const char *FillBackColor = "#FFFACD";
@@ -260,10 +639,17 @@ template <typename KeyT, typename Comp> class RBTree {
     static constexpr const char *ColorBlack = "#808080";
 
     bool enable_log_ = false;
+    boost::filesystem::path log_dir;
+    boost::filesystem::path graph_path;
+    boost::filesystem::path log_path;
+
     std::ofstream file_log_;
     std::ofstream file_graph_;
 
   public:
+    // Get path to dir with this tree logs
+    std::string getLogDirPath() const { return log_dir.string(); }
+
     void printLogTree(const char *file, const char *function, const size_t line) {
       if (!enable_log_)
         return;
@@ -274,7 +660,7 @@ template <typename KeyT, typename Comp> class RBTree {
 
       // Args for dot
       std::vector<std::string> args{};
-      args.emplace_back(FileGraphPath);
+      args.emplace_back(graph_path.string());
       args.emplace_back("-T" + std::string(TypeOfImage));
 
       // Run command using boost::process
@@ -315,20 +701,34 @@ template <typename KeyT, typename Comp> class RBTree {
     }
 
   private:
+    void copyLogger(const RBTree &rhs) {
+      enable_log_ = rhs.enable_log_;
+
+      // Dont copy logs from previous tree!
+      printLogStart();
+    }
+    
+    void closeLogger() {
+      printLogFinish();
+    }
+
     void printLogStart(void) {
-      // If not logs
+      // If disable logging
       if (!enable_log_)
         return;
 
-      const boost::filesystem::path log_dir = boost::filesystem::path(FolderLogPath);
-      const bool need_init = !boost::filesystem::exists(log_dir) || !boost::filesystem::is_directory(log_dir);
+      log_dir =
+          boost::filesystem::path(FolderLogPath) / boost::filesystem::path(std::format("{:p}", static_cast<const void *>(nil_)));
+      bool need_init = !boost::filesystem::exists(log_dir) || !boost::filesystem::is_directory(log_dir);
       if (need_init) {
         boost::system::error_code ec;
         boost::filesystem::create_directories(log_dir, ec);
         if (ec)
           throw std::runtime_error("creating path for logs failed: " + ec.message());
       }
-      file_log_.open(FileLogPath, std::ios::out | std::ios::trunc);
+      log_path = log_dir / FileLogName;
+      graph_path = log_dir / FileGraphName;
+      file_log_.open(log_path.string(), std::ios::out | std::ios::trunc);
 
       file_log_ << "<!DOCTYPE html>\n"
                    "<html lang=\"eng\">\n"
@@ -366,7 +766,7 @@ template <typename KeyT, typename Comp> class RBTree {
       file_log_.close();
     }
     void GenerateGraph() {
-      file_graph_.open(FileGraphPath, std::ios::out | std::ios::trunc);
+      file_graph_.open(graph_path, std::ios::out | std::ios::trunc);
 
       file_graph_ << "digraph G{\n"
                      "rankdir = TB;\n"
@@ -412,14 +812,14 @@ template <typename KeyT, typename Comp> class RBTree {
       if (CurrentNode->isBlack()) {
         file_graph_ << "\tnode" << CurrentNode << "[shape = Mrecord, style = filled, fillcolor = \"" << ColorBlack
                     << "\", color = \"" << ColorEdgeGraph << "\", label = \"{ PARENT: " << CurrentNode->getParent()
-                    << " | PTR: " << CurrentNode << " | DATA: " << CurrentNode->getKey()
+                    << " | PTR: " << CurrentNode << " | DATA: " << CurrentNode->getKey() << " | SIZE: " << CurrentNode->getSize()
                     << " | { <f0> LEFT: " << CurrentNode->getLeft() << " | <f1> RIGHT: " << CurrentNode->getRight()
                     << " }}\"];\n";
       }
       if (CurrentNode->isRed()) {
         file_graph_ << "\tnode" << CurrentNode << "[shape = Mrecord, style = filled, fillcolor = \"" << ColorRed
                     << "\", color = \"" << ColorEdgeGraph << "\", label = \"{ PARENT: " << CurrentNode->getParent()
-                    << " | PTR: " << CurrentNode << " | DATA: " << CurrentNode->getKey()
+                    << " | PTR: " << CurrentNode << " | DATA: " << CurrentNode->getKey() << " | SIZE: " << CurrentNode->getSize()
                     << " | { <f0> LEFT: " << CurrentNode->getLeft() << " | <f1> RIGHT: " << CurrentNode->getRight()
                     << " }}\"];\n";
       }
@@ -444,7 +844,8 @@ template <typename KeyT, typename Comp> class RBTree {
     void WriteNil() {
       file_graph_ << "\tnode" << nil_ << "[shape = Mrecord, style = filled, fillcolor = \"" << ColorBlack << "\", color = \""
                   << ColorEdgeGraph << "\", label = \"{ PARENT: " << nil_->getParent() << " | PTR: " << nil_ << " | NIL "
-                  << " | { <f0> LEFT: " << nil_->getLeft() << " | <f1> RIGHT: " << nil_->getRight() << " }}\"];\n";
+                  << " | SIZE: " << nil_->getSize() << " | { <f0> LEFT: " << nil_->getLeft()
+                  << " | <f1> RIGHT: " << nil_->getRight() << " }}\"];\n";
     }
 };
 }; // namespace Tree

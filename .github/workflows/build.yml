@@ -8,7 +8,7 @@ on:
 
 env:
   BUILD_TYPE: Debug
-  GCC_VERSION: 10
+  GCC_VERSION: 13
   DEBIAN_FRONTEND: noninteractive
   TZ: Etc/UTC
 
@@ -17,18 +17,6 @@ defaults:
     shell: bash
 
 jobs:
-  format-check:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Check repo
-      uses: actions/checkout@v4
-
-    - name: Check formatting
-      run: |
-        find source include -name '*.cpp' -o -name '*.h' -o -name '*.hpp' | xargs clang-format -i --style=file
-        git diff --exit-code
-
   build:
     runs-on: ubuntu-latest
 

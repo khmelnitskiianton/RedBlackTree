@@ -1,6 +1,7 @@
 enable_testing()
 find_package(GTest REQUIRED)
 include(GoogleTest)
+find_package(Boost REQUIRED COMPONENTS filesystem)
 
 add_executable(unittests 
   unittests.cpp
@@ -10,6 +11,7 @@ target_link_libraries(
     unittests 
     PRIVATE
     GTest::gtest
+    Boost::filesystem
 )
 
 if (MSVC)
