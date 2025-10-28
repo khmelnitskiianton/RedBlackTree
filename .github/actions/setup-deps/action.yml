@@ -21,4 +21,4 @@ runs:
           clang lld clang-format \
           python3 \
           libgtest-dev libgmock-dev libtbb-dev \
-          libboost-dev graphviz
+          libboost-dev libboost-filesystem-dev graphviz

@@ -4,13 +4,6 @@
 
 #include "io_wrap.hpp"
 
-bool comparator(int a, int b) {
-  if (a < b)
-    return true;
-  return false;
-}
-
-
 template <typename C, typename T> size_t range_query(const C &s, const T &fst, const T &snd) {
   using itt = typename C::const_iterator;
   if (snd <= fst)

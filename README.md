@@ -15,7 +15,7 @@ Red-black tree implementation on C++
 Compiler c/c++ and libstdc++ >= 13, cmake, python, gtest, boost, graphviz
 
 ```shell
-apt-get install build-essential ninja-build make cmake python3 libboost graphviz
+apt-get install build-essential ninja-build make cmake python3 libboost libboost-filesystem-dev graphviz
 apt-get gcc-13 g++-13 libstdc++-13-dev
 apt-get install libgtest-dev libgmock-dev libtbb-dev
 ```
@@ -97,8 +97,6 @@ Python Tests, for run do:
 python3 tests/e2e/run.py --bin build/bin/rbtree
 ```
 
-Useful archive with tests set and script for run rbtree - `tests/e2e.tar.gz`
-
 ## Benchmarks
 
 To confirm optimality algorithm of my red-black tree and range query method, I create big tests and compare work time of program based on my RBTree and std::set (with its method that used lower_bound and std::distance)
@@ -112,31 +110,33 @@ cmp -s output_set.txt output_rbtree.txt && echo "IDENTICAL" || echo "DIFFERENT"
 
 Test 1 (1000000 keys, 100000 requests):
 ```shell
-./build/bin/set < tests/bench/big_test_000001.txt > output_set.txt  322,22s user 0,97s system 98% cpu 5:29,67 total
-./build/bin/rbtree < tests/bench/big_test_000001.txt > output_rbtree.txt  4,08s user 0,51s system 72% cpu 6,340 total
+./build/bin/set < tests/bench/big_test_000001.txt > output_set.txt  394,97s user 1,44s system 98% cpu 6:40,96 total
+./build/bin/rbtree < tests/bench/big_test_000001.txt > output_rbtree.txt  2,58s user 0,43s system 64% cpu 4,683 total
 ```
 
 Test 2 (10000000 keys, 100 requests):
 ```shell
-./build/bin/set < tests/bench/big_test_000002.txt > output_set.txt  32,31s user 0,31s system 99% cpu 32,629 total
-./build/bin/rbtree < tests/bench/big_test_000002.txt > output_rbtree.txt  46,82s user 0,42s system 99% cpu 47,314 total
+./build/bin/set < tests/bench/big_test_000002.txt > output_set.txt  28,35s user 0,28s system 99% cpu 28,629 total
+./build/bin/rbtree < tests/bench/big_test_000002.txt > output_rbtree.txt  30,94s user 0,40s system 99% cpu 31,344 total
 ```
 
 Test 3 (10000 keys, 10000000 requests):
 ```shell
-./build/bin/set < tests/bench/big_test_000003.txt > output_set.txt  94,69s user 60,25s system 38% cpu 6:42,16 total
-./build/bin/rbtree < tests/bench/big_test_000003.txt > output_rbtree.txt  45,38s user 64,20s system 30% cpu 6:04,69 total
+./build/bin/set < tests/bench/big_test_000003.txt > output_set.txt  89,96s user 65,19s system 40% cpu 6:24,32 total
+./build/bin/rbtree < tests/bench/big_test_000003.txt > output_rbtree.txt  31,56s user 58,62s system 32% cpu 4:36,04 total
 ```
 
 Test 4 (1000000 keys, 1000000 requests):
 ```shell
-
-/build/bin/rbtree < tests/bench/big_test_000004.txt > output_rbtree.txt  12,50s user 6,16s system 45% cpu 41,045 total
+# set run for 30 min and didnt end
+./build/bin/rbtree < tests/bench/big_test_000004.txt > output_rbtree.txt  8,22s user 5,01s system 39% cpu 33,478 total
 ```
 
 Analysis:
-+ `insert` method is 1.4 times faster in the 'std::set' structure.
-+ `range_query` method is 2 times faster in this red-black tree implementation
++ `insert` method is 1.1 times faster in the 'std::set' structure.
++ `range_query` method is 3 times faster in this red-black tree implementation
+
+Script for generating tests: `tests/bench/gen.py`
 
 ## Workflow
 

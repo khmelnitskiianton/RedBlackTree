@@ -34,20 +34,20 @@ template <typename KeyT, typename Comp> class RBTree {
 
         const KeyT &getKey() const { return key_; }
 
-        void setParent(Node *parent) { parent_ = parent; }
-        void setLeft(Node *left) { left_ = left; }
-        void setRight(Node *right) { right_ = right; }
-        void setColor(Color color) { color_ = color; }
-        void setSize(size_t size) { size_ = size; }
+        inline void setParent(Node *parent) { parent_ = parent; }
+        inline void setLeft(Node *left) { left_ = left; }
+        inline void setRight(Node *right) { right_ = right; }
+        inline void setColor(Color color) { color_ = color; }
+        inline void setSize(size_t size) { size_ = size; }
 
-        Node *getParent() const { return parent_; }
-        Node *getLeft() const { return left_; }
-        Node *getRight() const { return right_; }
-        Color getColor() const { return color_; }
-        size_t getSize() const { return size_; }
+        inline Node *getParent() const { return parent_; }
+        inline Node *getLeft() const { return left_; }
+        inline Node *getRight() const { return right_; }
+        inline Color getColor() const { return color_; }
+        inline size_t getSize() const { return size_; }
 
-        bool isRed() const { return color_ == Color::Red; }
-        bool isBlack() const { return color_ == Color::Black; }
+        inline bool isRed() const { return color_ == Color::Red; }
+        inline bool isBlack() const { return color_ == Color::Black; }
     };
     using SrcDstPair = std::pair<const Node *, Node *>;
 
@@ -128,17 +128,17 @@ template <typename KeyT, typename Comp> class RBTree {
     }
 
     /// Get size of node
-    int nodeSize(const Node *node) const { return (node == nil_) ? 0 : node->getSize(); }
+    inline int nodeSize(const Node *node) const { return (node == nil_) ? 0 : node->getSize(); }
 
     /// Update one size with its l/r nodes sizes
-    void updateSize(Node *node) {
+    inline void updateSize(Node *node) {
       if (node == nil_)
         return;
       node->setSize(1 + nodeSize(node->getLeft()) + nodeSize(node->getRight()));
     }
 
     /// Update sizes for all branch
-    void updateSizeUp(Node *node) {
+    inline void updateSizeUp(Node *node) {
       while (node != nil_) {
         updateSize(node);
         node = node->getParent();
@@ -146,8 +146,8 @@ template <typename KeyT, typename Comp> class RBTree {
     }
 
     /// Method returns an ptr to the first element that compares not less than x.
-    Node *lowerBound(const KeyT &key) const { return lowerBound(root_, key); }
-    Node *lowerBound(Node *node, const KeyT &key) const {
+    inline Node *lowerBound(const KeyT &key) const { return lowerBound(root_, key); }
+    inline Node *lowerBound(Node *node, const KeyT &key) const {
       Node *save_node = nil_;
       while (node != nil_) {
         if (!comparator_(node->getKey(), key)) {
@@ -161,8 +161,8 @@ template <typename KeyT, typename Comp> class RBTree {
     }
 
     /// Method returns an ptr to the first element that compares greater than x.
-    Node *upperBound(const KeyT &key) const { return upperBound(root_, key); }
-    Node *upperBound(Node *node, const KeyT &key) const {
+    inline Node *upperBound(const KeyT &key) const { return upperBound(root_, key); }
+    inline Node *upperBound(Node *node, const KeyT &key) const {
       Node *save_node = nil_;
       while (node != nil_) {
         if (comparator_(key, node->getKey())) {
@@ -176,7 +176,7 @@ template <typename KeyT, typename Comp> class RBTree {
     }
 
     /// Method counts amount of nodes that less than node
-    int rankOfNode(const Node *p) const {
+    inline int rankOfNode(const Node *p) const {
       if (p == nil_)
         return nodeSize(root_);
       int r = nodeSize(p->getLeft());
@@ -192,19 +192,19 @@ template <typename KeyT, typename Comp> class RBTree {
     }
 
     /// Method counts amount of nodes that less than key
-    int rankLowerBound(const KeyT &key) const {
+    inline int rankLowerBound(const KeyT &key) const {
       const Node *p = lowerBound(key);
       return rankOfNode(p);
     }
 
     /// Method counts amount of nodes that less or equal than key
-    int rankUpperBound(const KeyT &key) const {
+    inline int rankUpperBound(const KeyT &key) const {
       const Node *p = upperBound(key);
       return rankOfNode(p);
     }
 
     /// Wrap for comparator to check equality
-    bool compareEqual(const KeyT &a, const KeyT &b) const { return !comparator_(a, b) && !comparator_(b, a); }
+    inline bool compareEqual(const KeyT &a, const KeyT &b) const { return !comparator_(a, b) && !comparator_(b, a); }
 
     /// Method of free tree's nodes
     void freeTree() {
@@ -228,9 +228,9 @@ template <typename KeyT, typename Comp> class RBTree {
 
     /// Method to search key in tree
     /// Return non-const node ptr
-    Node *search(const KeyT &key) const { return search(root_, key); }
+    inline Node *search(const KeyT &key) const { return search(root_, key); }
     /// Method to search key in tree's node using loop(not recursion)
-    Node *search(Node *node, const KeyT &key) const {
+    inline Node *search(Node *node, const KeyT &key) const {
       while ((node != nil_) && (!compareEqual(key, node->getKey()))) {
         if (comparator_(key, node->getKey()))
           node = node->getLeft();
@@ -250,17 +250,17 @@ template <typename KeyT, typename Comp> class RBTree {
     }
 
     /// Method finds minimum node in tree
-    Node *minimum() const { return minimum(root_); }
+    inline Node *minimum() const { return minimum(root_); }
     /// Method finds minimum node from tree's node
-    Node *minimum(Node *node) const {
+    inline Node *minimum(Node *node) const {
       while (node->getLeft() != nil_)
         node = node->getLeft();
       return node;
     }
     /// Method finds maximum node in tree
-    const Node *maximum() const { return maximum(root_); }
+    inline const Node *maximum() const { return maximum(root_); }
     /// Method finds maximum node from tree's node
-    const Node *maximum(const Node *node) const {
+    inline const Node *maximum(const Node *node) const {
       while (node->getRight() != nil_)
         node = node->getRight();
       return node;
@@ -268,7 +268,7 @@ template <typename KeyT, typename Comp> class RBTree {
 
     /// Method of find "next" node from given
     /// If maximum - return NIL
-    const Node *successor(const Node *node) const {
+    inline const Node *successor(const Node *node) const {
       if (node->getRight() != nil_)
         return minimum(node->getRight());
 
@@ -281,7 +281,7 @@ template <typename KeyT, typename Comp> class RBTree {
     }
     /// Method of find "previous" node from given
     /// If minimum - return NIL
-    const Node *predecessor(const Node *node) const {
+    inline const Node *predecessor(const Node *node) const {
       if (node->getLeft() != nil_)
         return maximum(node->getLeft());
 
@@ -295,7 +295,7 @@ template <typename KeyT, typename Comp> class RBTree {
 
     /// Method rotates node for left
     /// Requires right leaf != NIL
-    void rotateLeft(Node *x) {
+    inline void rotateLeft(Node *x) {
       Node *y = x->getRight();   // set y
       x->setRight(y->getLeft()); // Make y left subtree in right for x
 
@@ -323,7 +323,7 @@ template <typename KeyT, typename Comp> class RBTree {
 
     /// Method rotates node for right
     /// Requires left leaf != NIL
-    void rotateRight(Node *x) {
+    inline void rotateRight(Node *x) {
       Node *y = x->getLeft();    // set y
       x->setLeft(y->getRight()); // Make y right subtree in left for x
 
@@ -349,7 +349,7 @@ template <typename KeyT, typename Comp> class RBTree {
       updateSize(y);
     }
 
-    void insertFixup(Node *z) {
+    inline void insertFixup(Node *z) {
       Node *y = nil_;
       while (z->getParent()->isRed()) {
         if (z->getParent() == z->getParent()->getParent()->getLeft()) {
@@ -389,7 +389,7 @@ template <typename KeyT, typename Comp> class RBTree {
       root_->setColor(Color::Black);
     }
 
-    void transplant(Node *u, Node *v) {
+    inline void transplant(Node *u, Node *v) {
       if (u->getParent() == nil_) {
         root_ = v;
       } else if (u == u->getParent()->getLeft()) {
@@ -400,7 +400,7 @@ template <typename KeyT, typename Comp> class RBTree {
       v->setParent(u->getParent());
     }
 
-    void eraseFixup(Node *x) {
+    inline void eraseFixup(Node *x) {
       Node *w = nil_;
       while ((x != root_) && (x->getColor() == Color::Black)) {
         if (x == x->getParent()->getLeft()) {
@@ -459,8 +459,9 @@ template <typename KeyT, typename Comp> class RBTree {
       }
       x->setColor(Color::Black);
     }
+
     /// Method for deleting
-    void erase(Node *z) {
+    inline void erase(Node *z) {
       Node *y = z;
       Node *x = nil_;
       Color y_orig_color = y->getColor();
