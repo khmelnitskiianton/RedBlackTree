@@ -96,15 +96,22 @@ def main():
                 err = "\n".join(proc.stderr.decode(errors="replace").splitlines()[:5])
                 print(f"  {color('Stderr (first 5 lines):','yellow')}\n    "+err.replace("\n","\n    "))
             if not stdout_ok:
-                diff = difflib.unified_diff(
+                diff_lines = list(difflib.unified_diff(
                     exp_n.splitlines(keepends=True),
                     got_n.splitlines(keepends=True),
-                    fromfile=f"expected/{name}", tofile=f"actual/{name}", n=3
-                )
-                for i,line in enumerate(diff):
-                    if i>=50: print("    ..."); break
-                    sys.stdout.write("    "+line)
-                if sys.stdout.tell() == 0: pass
+                    fromfile=f"expected/{name}",
+                    tofile=f"actual/{name}",
+                    n=3
+                ))
+                if diff_lines:
+                    for i, line in enumerate(diff_lines):
+                        if i >= 50:
+                            print("    ...")
+                            break
+                        sys.stdout.write("    " + line)
+                    sys.stdout.flush()
+                else:
+                    print("    (No visible diff)")
             failed+=1
 
     print(f"\nTotal: {passed+failed}  {color('pass:','green')} {passed}  {color('fail:','red')} {failed}")
