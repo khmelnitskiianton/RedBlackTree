@@ -111,7 +111,7 @@ cmp -s output_set.txt output_rbtree.txt && echo "IDENTICAL" || echo "DIFFERENT"
 Test 1 (1000000 keys, 100000 requests):
 ```shell
 ./build/bin/set < tests/bench/big_test_000001.txt > output_set.txt  394,97s user 1,44s system 98% cpu 6:40,96 total
-./build/bin/rbtree < tests/bench/big_test_000001.txt > output_rbtree.txt  2,58s user 0,43s system 64% cpu 4,683 total
+./build/bin/rbtree < tests/bench/big_test_000001.txt > output_rbtree1.txt  5,20s user 0,36s system 80% cpu 6,924 total
 ```
 
 Test 2 (10000000 keys, 100 requests):

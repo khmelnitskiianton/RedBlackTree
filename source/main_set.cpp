@@ -9,11 +9,7 @@ template <typename C, typename T> size_t range_query(const C &s, const T &fst, c
   if (snd <= fst)
     return 0;
   itt first = s.lower_bound(fst);
-  if (first == s.end())
-    return 0;
-  if (*first >= snd)
-    return 0;
-  itt last = s.lower_bound(snd);
+  itt last = s.upper_bound(snd);
   return std::distance(first, last); // std::distance для set
 }
 

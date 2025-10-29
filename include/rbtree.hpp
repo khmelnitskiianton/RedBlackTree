@@ -609,13 +609,12 @@ template <typename KeyT, typename Comp> class RBTree {
       return 1;
     }
 
+    /// Method count elements in range [begin, end]
     size_t rangeQuery(const KeyT &begin, const KeyT &end) {
-      if (!comparator_(begin, end) && !compareEqual(begin, end))
-        return 0;
+      if (comparator_(end, begin)) return 0;
       int r1 = rankLowerBound(begin);
-      int r2 = rankLowerBound(end);
-      // [first, second)
-      return (r2 > r1) ? (r2 - r1) : 0;
+      int r2 = rankUpperBound(end);
+      return r2 - r1;
     }
 
     /// Method to walk tree recursively
