@@ -1,5 +1,3 @@
-find_package(Boost REQUIRED COMPONENTS filesystem)
-
 set(TARGET_TREE rbtree)
 set(TARGET_SET set)
 
@@ -12,7 +10,6 @@ set(SOURCES_SET
    )
 
 add_executable(${TARGET_TREE} ${SOURCES_TREE})
-target_link_libraries(${TARGET_TREE} PRIVATE Boost::filesystem)
 target_include_directories(${TARGET_TREE} PRIVATE "${PROJECT_SOURCE_DIR}/include")
 
 add_executable(${TARGET_SET} ${SOURCES_SET})

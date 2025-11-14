@@ -15,7 +15,7 @@ Red-black tree implementation on C++
 Compiler c/c++ and libstdc++ >= 13, cmake, python, gtest, boost, graphviz
 
 ```shell
-apt-get install build-essential ninja-build make cmake python3 libboost libboost-filesystem-dev graphviz
+apt-get install build-essential ninja-build make cmake python3 libboost graphviz
 apt-get gcc-13 g++-13 libstdc++-13-dev
 apt-get install libgtest-dev libgmock-dev libtbb-dev
 ```

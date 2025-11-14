@@ -1,8 +1,7 @@
 #ifndef INCLUDE_RBTREE_HPP
 #define INCLUDE_RBTREE_HPP
 
-#include <boost/filesystem.hpp>
-#include <boost/process.hpp>
+#include <filesystem>
 #include <format>
 #include <fstream>
 #include <iostream>
@@ -10,6 +9,8 @@
 #include <string>
 #include <utility>
 #include <vector>
+
+#include <boost/process.hpp>
 
 namespace Tree {
 /// Requires bool comparator_(KeyT a, KeyT b)
@@ -639,9 +640,9 @@ template <typename KeyT, typename Comp> class RBTree {
     static constexpr const char *ColorBlack = "#808080";
 
     bool enable_log_ = false;
-    boost::filesystem::path log_dir;
-    boost::filesystem::path graph_path;
-    boost::filesystem::path log_path;
+    std::filesystem::path log_dir;
+    std::filesystem::path graph_path;
+    std::filesystem::path log_path;
 
     std::ofstream file_log_;
     std::ofstream file_graph_;
@@ -666,14 +667,9 @@ template <typename KeyT, typename Comp> class RBTree {
       // Run command using boost::process
       boost::process::ipstream dot_out;
       // Need absolute path for 'dot'
-      boost::filesystem::path graphviz_bin = boost::process::search_path("dot");
-      if (graphviz_bin.empty()) {
-        throw std::runtime_error("Graphviz 'dot' not found in PATH");
-      }
-
       int exit_code = 0;
       try {
-        exit_code = boost::process::system(graphviz_bin, boost::process::args(args), boost::process::std_out > dot_out);
+        exit_code = boost::process::system("dot", boost::process::args(args), boost::process::std_out > dot_out);
       } catch (const boost::process::process_error &e) {
         // failed exec, ENOENT, EACCES, etc.
         throw std::runtime_error(std::string("Failed to start 'dot': ") + e.what());
@@ -718,11 +714,11 @@ template <typename KeyT, typename Comp> class RBTree {
         return;
 
       log_dir =
-          boost::filesystem::path(FolderLogPath) / boost::filesystem::path(std::format("{:p}", static_cast<const void *>(nil_)));
-      bool need_init = !boost::filesystem::exists(log_dir) || !boost::filesystem::is_directory(log_dir);
+          std::filesystem::path(FolderLogPath) / std::filesystem::path(std::format("{:p}", static_cast<const void *>(nil_)));
+      bool need_init = !std::filesystem::exists(log_dir) || !std::filesystem::is_directory(log_dir);
       if (need_init) {
-        boost::system::error_code ec;
-        boost::filesystem::create_directories(log_dir, ec);
+        std::error_code ec;
+        std::filesystem::create_directories(log_dir, ec);
         if (ec)
           throw std::runtime_error("creating path for logs failed: " + ec.message());
       }
