@@ -12,6 +12,8 @@ target_link_libraries(
     GTest::gtest
 )
 
+target_compile_definitions(unittests PRIVATE VIS_LOGS)
+
 if (MSVC)
     target_compile_options(unittests PRIVATE
         # Warnings

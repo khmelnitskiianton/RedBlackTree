@@ -1,16 +1,18 @@
 #ifndef INCLUDE_RBTREE_HPP
 #define INCLUDE_RBTREE_HPP
 
-#include <filesystem>
-#include <format>
-#include <fstream>
 #include <iostream>
 #include <stack>
-#include <string>
 #include <utility>
-#include <vector>
 
-#include <boost/process.hpp>
+#ifdef VIS_LOGS
+  #include <filesystem>
+  #include <format>
+  #include <string>
+  #include <vector>
+  #include <fstream>
+  #include <boost/process.hpp>
+#endif
 
 namespace Tree {
 /// Requires bool comparator_(KeyT a, KeyT b)
@@ -64,11 +66,13 @@ template <typename KeyT, typename Comp> class RBTree {
 
       // Free previous tree if it was not empty
       freeTree();
+
+#ifdef VIS_LOGS
       // Close previous logs
       closeLogger();
-
       // Copy logger
       copyLogger(rhs);
+#endif
 
       // Src to dst values coping
       nil_node_.setColor(Color::Black);
@@ -193,19 +197,21 @@ template <typename KeyT, typename Comp> class RBTree {
     }
 
     /// Method counts amount of nodes that less than key
-    inline int rankLowerBound(const KeyT &key) const {
+    inline int rankLowerBound(const KeyT &key) const noexcept {
       const Node *p = lowerBound(key);
       return rankOfNode(p);
     }
 
     /// Method counts amount of nodes that less or equal than key
-    inline int rankUpperBound(const KeyT &key) const {
+    inline int rankUpperBound(const KeyT &key) const noexcept {
       const Node *p = upperBound(key);
       return rankOfNode(p);
     }
 
     /// Wrap for comparator to check equality
-    inline bool compareEqual(const KeyT &a, const KeyT &b) const { return !comparator_(a, b) && !comparator_(b, a); }
+    inline bool compareEqual(const KeyT &a, const KeyT &b) const noexcept { 
+      return !comparator_(a, b) && !comparator_(b, a); 
+    }
 
     /// Method of free tree's nodes
     void freeTree() {
@@ -229,9 +235,11 @@ template <typename KeyT, typename Comp> class RBTree {
 
     /// Method to search key in tree
     /// Return non-const node ptr
-    inline Node *search(const KeyT &key) const { return search(root_, key); }
+    inline Node *search(const KeyT &key) const noexcept { 
+      return search(root_, key); 
+    }
     /// Method to search key in tree's node using loop(not recursion)
-    inline Node *search(Node *node, const KeyT &key) const {
+    inline Node *search(Node *node, const KeyT &key) const noexcept {
       while ((node != nil_) && (!compareEqual(key, node->getKey()))) {
         if (comparator_(key, node->getKey()))
           node = node->getLeft();
@@ -251,17 +259,21 @@ template <typename KeyT, typename Comp> class RBTree {
     }
 
     /// Method finds minimum node in tree
-    inline Node *minimum() const { return minimum(root_); }
+    inline Node *minimum() const noexcept { 
+      return minimum(root_); 
+    }
     /// Method finds minimum node from tree's node
-    inline Node *minimum(Node *node) const {
+    inline Node *minimum(Node *node) const noexcept {
       while (node->getLeft() != nil_)
         node = node->getLeft();
       return node;
     }
     /// Method finds maximum node in tree
-    inline const Node *maximum() const { return maximum(root_); }
+    inline const Node *maximum() const noexcept { 
+      return maximum(root_); 
+    }
     /// Method finds maximum node from tree's node
-    inline const Node *maximum(const Node *node) const {
+    inline const Node *maximum(const Node *node) const noexcept {
       while (node->getRight() != nil_)
         node = node->getRight();
       return node;
@@ -269,7 +281,7 @@ template <typename KeyT, typename Comp> class RBTree {
 
     /// Method of find "next" node from given
     /// If maximum - return NIL
-    inline const Node *successor(const Node *node) const {
+    inline const Node *successor(const Node *node) const noexcept {
       if (node->getRight() != nil_)
         return minimum(node->getRight());
 
@@ -282,7 +294,7 @@ template <typename KeyT, typename Comp> class RBTree {
     }
     /// Method of find "previous" node from given
     /// If minimum - return NIL
-    inline const Node *predecessor(const Node *node) const {
+    inline const Node *predecessor(const Node *node) const noexcept {
       if (node->getLeft() != nil_)
         return maximum(node->getLeft());
 
@@ -296,7 +308,7 @@ template <typename KeyT, typename Comp> class RBTree {
 
     /// Method rotates node for left
     /// Requires right leaf != NIL
-    inline void rotateLeft(Node *x) {
+    inline void rotateLeft(Node *x) noexcept {
       Node *y = x->getRight();   // set y
       x->setRight(y->getLeft()); // Make y left subtree in right for x
 
@@ -324,7 +336,7 @@ template <typename KeyT, typename Comp> class RBTree {
 
     /// Method rotates node for right
     /// Requires left leaf != NIL
-    inline void rotateRight(Node *x) {
+    inline void rotateRight(Node *x) noexcept {
       Node *y = x->getLeft();    // set y
       x->setLeft(y->getRight()); // Make y right subtree in left for x
 
@@ -350,7 +362,7 @@ template <typename KeyT, typename Comp> class RBTree {
       updateSize(y);
     }
 
-    inline void insertFixup(Node *z) {
+    inline void insertFixup(Node *z) noexcept {
       Node *y = nil_;
       while (z->getParent()->isRed()) {
         if (z->getParent() == z->getParent()->getParent()->getLeft()) {
@@ -390,7 +402,7 @@ template <typename KeyT, typename Comp> class RBTree {
       root_->setColor(Color::Black);
     }
 
-    inline void transplant(Node *u, Node *v) {
+    inline void transplant(Node *u, Node *v) noexcept {
       if (u->getParent() == nil_) {
         root_ = v;
       } else if (u == u->getParent()->getLeft()) {
@@ -401,7 +413,7 @@ template <typename KeyT, typename Comp> class RBTree {
       v->setParent(u->getParent());
     }
 
-    inline void eraseFixup(Node *x) {
+    inline void eraseFixup(Node *x) noexcept {
       Node *w = nil_;
       while ((x != root_) && (x->getColor() == Color::Black)) {
         if (x == x->getParent()->getLeft()) {
@@ -462,7 +474,7 @@ template <typename KeyT, typename Comp> class RBTree {
     }
 
     /// Method for deleting
-    inline void erase(Node *z) {
+    inline void erase(Node *z) noexcept {
       Node *y = z;
       Node *x = nil_;
       Color y_orig_color = y->getColor();
@@ -506,7 +518,7 @@ template <typename KeyT, typename Comp> class RBTree {
       delete z;
     }
 
-    std::pair<bool, int> checkNode(const Node *n) const {
+    std::pair<bool, int> checkNode(const Node *n) const noexcept {
       if (n == nil_)
         return {true, 1}; // NIL is black, contributes 1
 
@@ -528,7 +540,7 @@ template <typename KeyT, typename Comp> class RBTree {
     }
 
     /// Method for verifing RB invariants
-    bool checkInvariants() const {
+    bool checkInvariants() const noexcept {
       if (root_ == nil_)
         return true; // empty tree is valid
       if (root_->getColor() != Color::Black)
@@ -538,14 +550,24 @@ template <typename KeyT, typename Comp> class RBTree {
 
     /// Methods for use tree
   public:
-    RBTree(Comp comparator, bool enable_log = false) : comparator_(comparator), enable_log_(enable_log) {
+    RBTree(Comp comparator 
+#ifdef VIS_LOGS
+      ,bool enable_log = false
+#endif
+    ) : 
+      comparator_(comparator)
+#ifdef VIS_LOGS
+      ,enable_log_(enable_log) 
+#endif
+      {
       nil_node_.setColor(Color::Black);
       nil_node_.setLeft(&nil_node_);
       nil_node_.setRight(&nil_node_);
       nil_node_.setParent(&nil_node_);
       nil_node_.setSize(0);
-
+#ifdef VIS_LOGS
       printLogStart();
+#endif
     }
 
     RBTree(const RBTree &rhs) { copyTree(rhs); }
@@ -557,13 +579,19 @@ template <typename KeyT, typename Comp> class RBTree {
 
     ~RBTree() {
       freeTree();
+
+#ifdef VIS_LOGS
       printLogFinish();
+#endif
+
     }
 
-    bool contains(const KeyT &key) const { return search(root_, key) != nil_; }
+    inline bool contains(const KeyT &key) const noexcept { 
+      return search(root_, key) != nil_; 
+    }
 
     /// Method for insert key in rbtree
-    void insert(const KeyT &key) {
+    inline void insert(const KeyT &key) noexcept {
       // If in tree dont add new, all uniq
       if (contains(key))
         return;
@@ -598,7 +626,7 @@ template <typename KeyT, typename Comp> class RBTree {
       //   throw std::runtime_error("Bad Red Black tree, no invariants");
     }
 
-    size_t erase(const KeyT &key) {
+    inline size_t erase(const KeyT &key) noexcept {
       Node *find_node = search(key);
       if (find_node == nil_)
         return 0;
@@ -611,8 +639,9 @@ template <typename KeyT, typename Comp> class RBTree {
     }
 
     /// Method count elements in range [begin, end]
-    size_t rangeQuery(const KeyT &begin, const KeyT &end) {
-      if (comparator_(end, begin)) return 0;
+    inline size_t rangeQuery(const KeyT &begin, const KeyT &end) noexcept {
+      if (comparator_(end, begin)) 
+        return 0;
       int r1 = rankLowerBound(begin);
       int r2 = rankUpperBound(end);
       return r2 - r1;
@@ -622,6 +651,8 @@ template <typename KeyT, typename Comp> class RBTree {
     void inorderTreeWalk() { inorderTreeWalk(root_); }
 
     /// Grpahviz log section
+
+#ifdef VIS_LOGS
   private:
     static constexpr const char *FolderLogPath = "/tmp/rbtree_log/";
     static constexpr const char *FileLogName = "log.html";
@@ -843,9 +874,12 @@ template <typename KeyT, typename Comp> class RBTree {
                   << " | SIZE: " << nil_->getSize() << " | { <f0> LEFT: " << nil_->getLeft()
                   << " | <f1> RIGHT: " << nil_->getRight() << " }}\"];\n";
     }
+#endif
 };
 }; // namespace Tree
 
-#define printTree() printLogTree(__FILE__, __PRETTY_FUNCTION__, __LINE__)
+#ifdef VIS_LOGS
+  #define printTree() printLogTree(__FILE__, __PRETTY_FUNCTION__, __LINE__)
+#endif
 
 #endif
