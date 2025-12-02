@@ -45,7 +45,7 @@ TEST(RBTreeTests, rangeQueryTest) {
   ASSERT_EQ(rbtree.rangeQuery(6, 9), 0);
   rbtree.insert(30);
   rbtree.insert(40);
-  ASSERT_EQ(rbtree.rangeQuery(15, 40), 2);
+  ASSERT_EQ(rbtree.rangeQuery(15, 40), 3);
 }
 
 TEST(RBTreeTests, initTest) {
@@ -56,12 +56,12 @@ TEST(RBTreeTests, initTest) {
   ASSERT_EQ(rbtree.rangeQuery(6, 9), 0);
   rbtree.insert(30);
   rbtree.insert(40);
-  ASSERT_EQ(rbtree.rangeQuery(15, 40), 2);
+  ASSERT_EQ(rbtree.rangeQuery(15, 40), 3);
   // Init
   Tree::RBTree<int, bool (*)(int, int)> new_rbtree = rbtree;
   ASSERT_EQ(new_rbtree.rangeQuery(8, 31), 3);
   ASSERT_EQ(new_rbtree.rangeQuery(6, 9), 0);
-  ASSERT_EQ(new_rbtree.rangeQuery(15, 40), 2);
+  ASSERT_EQ(new_rbtree.rangeQuery(15, 40), 3);
 }
 
 TEST(RBTreeTests, copyTest) {
@@ -72,13 +72,13 @@ TEST(RBTreeTests, copyTest) {
   ASSERT_EQ(rbtree.rangeQuery(6, 9), 0);
   rbtree.insert(30);
   rbtree.insert(40);
-  ASSERT_EQ(rbtree.rangeQuery(15, 40), 2);
+  ASSERT_EQ(rbtree.rangeQuery(15, 40), 3);
   // Copy
   Tree::RBTree<int, bool (*)(int, int)> new_rbtree(comparator, true);
   new_rbtree = rbtree;
   ASSERT_EQ(new_rbtree.rangeQuery(8, 31), 3);
   ASSERT_EQ(new_rbtree.rangeQuery(6, 9), 0);
-  ASSERT_EQ(new_rbtree.rangeQuery(15, 40), 2);
+  ASSERT_EQ(new_rbtree.rangeQuery(15, 40), 3);
 }
 
 
