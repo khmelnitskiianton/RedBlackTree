@@ -3,7 +3,7 @@
 #include <set>
 
 #ifdef TIME_COUNT
-  #include <chrono>
+#include <chrono>
 #endif
 
 #include "io_wrap.hpp"
@@ -24,7 +24,7 @@ int main() {
   double total_insert = 0.0;
   double total_rq = 0.0;
   double total_time = 0.0;
-  auto start_time = std::chrono::steady_clock::now(); 
+  auto start_time = std::chrono::steady_clock::now();
 #endif
 
   try {
@@ -37,7 +37,7 @@ int main() {
         }
 
 #ifdef TIME_COUNT
-        auto start_insert = std::chrono::steady_clock::now(); 
+        auto start_insert = std::chrono::steady_clock::now();
 #endif
 
         key_set.insert(x);
@@ -46,7 +46,7 @@ int main() {
         auto end_insert = std::chrono::steady_clock::now();
         std::chrono::duration<double> elapsed = end_insert - start_insert;
         total_insert += elapsed.count();
-#endif      
+#endif
 
       } else if (cmd == 'q') {
         int l = 0, r = 0;
@@ -55,13 +55,13 @@ int main() {
         }
 
 #ifdef TIME_COUNT
-        auto start_rq = std::chrono::steady_clock::now(); 
+        auto start_rq = std::chrono::steady_clock::now();
 #endif
 
         size_t rq = range_query<std::set<int>, int>(key_set, l, r);
 
 #ifdef TIME_COUNT
-        (void) rq; // avoid unused warning
+        (void)rq; // avoid unused warning
         auto end_rq = std::chrono::steady_clock::now();
         std::chrono::duration<double> elapsed = end_rq - start_rq;
         total_rq += elapsed.count();

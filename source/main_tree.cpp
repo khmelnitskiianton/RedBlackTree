@@ -5,23 +5,17 @@
 #include "rbtree.hpp"
 
 #ifdef TIME_COUNT
-  #include <chrono>
+#include <chrono>
 #endif
 
-bool comparator(int a, int b) {
-  if (a < b)
-    return true;
-  return false;
-}
-
 int main() {
-  Tree::RBTree<int, bool (*)(int, int)> rbtree(comparator);
+  Tree::RBTree<int, std::less<int>> rbtree(std::less<int>{});
 
 #ifdef TIME_COUNT
   double total_insert = 0.0;
   double total_rq = 0.0;
   double total_time = 0.0;
-  auto start_time = std::chrono::steady_clock::now(); 
+  auto start_time = std::chrono::steady_clock::now();
 #endif
 
   try {
@@ -34,7 +28,7 @@ int main() {
         }
 
 #ifdef TIME_COUNT
-        auto start_insert = std::chrono::steady_clock::now(); 
+        auto start_insert = std::chrono::steady_clock::now();
 #endif
 
         rbtree.insert(x);
@@ -43,7 +37,7 @@ int main() {
         auto end_insert = std::chrono::steady_clock::now();
         std::chrono::duration<double> elapsed_insert = end_insert - start_insert;
         total_insert += elapsed_insert.count();
-#endif  
+#endif
 
       } else if (cmd == 'q') {
         int l = 0, r = 0;
@@ -52,19 +46,19 @@ int main() {
         }
 
 #ifdef TIME_COUNT
-        auto start_rq = std::chrono::steady_clock::now(); 
+        auto start_rq = std::chrono::steady_clock::now();
 #endif
 
         size_t rq = rbtree.rangeQuery(l, r);
 
 #ifdef TIME_COUNT
-        (void) rq; // avoid unused warning
+        (void)rq; // avoid unused warning
         auto end_rq = std::chrono::steady_clock::now();
         std::chrono::duration<double> elapsed_rq = end_rq - start_rq;
         total_rq += elapsed_rq.count();
 #else
         std::cout << rq << ' ';
-#endif  
+#endif
 
       } else {
         throw std::ios_base::failure("unknown request in input data");
